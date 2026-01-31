@@ -37,6 +37,7 @@ var (
 		// These are all valid nodes.
 		"averageNode":    {},
 		"countNode":      {},
+		"cursorNode":     {},
 		"createNode":     {},
 		"dagScanNode":    {},
 		"deleteNode":     {},
