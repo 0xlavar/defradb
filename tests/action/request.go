@@ -106,7 +106,10 @@ nodeLoop:
 			options = append(options, client.WithOperationName(a.OperationName.Value()))
 		}
 		if a.Variables.HasValue() {
-			options = append(options, client.WithVariables(a.Variables.Value()))
+			resolvedVars := a.resolveVariables()
+			if resolvedVars != nil {
+				options = append(options, client.WithVariables(resolvedVars))
+			}
 		}
 
 		if !a.DoNotRefreshViews && !expectedErrorRaised {
@@ -157,4 +160,29 @@ func (a *Request) getTransaction(db client.TxnStore) client.Txn {
 	}
 
 	return a.s.Txns[transactionID]
+}
+
+// resolveVariables creates a copy of the Variables map with CapturedVar references
+// resolved to their captured values from state.
+func (a *Request) resolveVariables() map[string]any {
+	if !a.Variables.HasValue() {
+		return nil
+	}
+
+	vars := a.Variables.Value()
+	resolved := make(map[string]any, len(vars))
+
+	for k, v := range vars {
+		switch ref := v.(type) {
+		case state.CapturedVar:
+			captured, ok := a.s.GetCapturedVariable(string(ref))
+			if !ok {
+				a.s.T.Fatalf("captured variable %q not found - ensure a prior request captured this value using CaptureCursor", ref)
+			}
+			resolved[k] = captured
+		default:
+			resolved[k] = v
+		}
+	}
+	return resolved
 }
