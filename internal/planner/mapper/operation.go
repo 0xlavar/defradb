@@ -31,6 +31,9 @@ type Operation struct {
 
 	// CommitSelects is the list of commit selections in the operation.
 	CommitSelects []*CommitSelect
+
+	// CursorSelects is the list of cursor-wrapped selections in the operation.
+	CursorSelects []*Select
 }
 
 // addSelection adds a new selection to the operation's document mapping.
