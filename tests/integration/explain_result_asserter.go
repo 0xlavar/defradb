@@ -42,6 +42,7 @@ type ExplainResultAsserter struct {
 	planExecutions immutable.Option[uint64]
 	withOrder      bool
 	withLimit      bool
+	withCursor     bool
 }
 
 func readNumberProp(t testing.TB, val any, prop string) uint64 {
@@ -76,6 +77,10 @@ func (a *ExplainResultAsserter) Assert(t testing.TB, result map[string]any) {
 	require.Len(t, operationNode, 1)
 	node, ok := operationNode[0]["selectTopNode"].(dataMap)
 	require.True(t, ok, "Expected selectTopNode")
+	if a.withCursor {
+		node, ok = node["cursorNode"].(dataMap)
+		require.True(t, ok, "Expected cursorNode")
+	}
 	if a.withLimit {
 		node, ok = node["limitNode"].(dataMap)
 		require.True(t, ok, "Expected limitNode")
@@ -176,6 +181,11 @@ func (a *ExplainResultAsserter) WithOrder() *ExplainResultAsserter {
 
 func (a *ExplainResultAsserter) WithLimit() *ExplainResultAsserter {
 	a.withLimit = true
+	return a
+}
+
+func (a *ExplainResultAsserter) WithCursor() *ExplainResultAsserter {
+	a.withCursor = true
 	return a
 }
 
