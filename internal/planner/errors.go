@@ -20,9 +20,8 @@ const (
 	errUnsupportedEncryptedOperator   string = "unsupported operator for encrypted field"
 	errFailedToCreateNormalValue      string = "failed to create normal value for field"
 	errFailedToGenerateSearchTag      string = "failed to generate search tag for field"
-	errMissingFieldSelection          string = "missing field selection"
-	errNoSupportingIndexForCursor     string = "no supporting index for cursor order field"
-	errCursorIndexDirectionMismatch   string = "cursor index does not support required scan direction"
+	errMissingFieldSelection      string = "missing field selection"
+	errNoSupportingIndexForCursor string = "no supporting index for cursor order field"
 )
 
 var (
@@ -47,8 +46,7 @@ var (
 	ErrFailedToCreateNormalValue           = errors.New(errFailedToCreateNormalValue)
 	ErrFailedToGenerateSearchTag           = errors.New(errFailedToGenerateSearchTag)
 	ErrIncorrectOrMissingCID               = errors.New("cid either does not exist or belong to document")
-	ErrNoSupportingIndexForCursor          = errors.New(errNoSupportingIndexForCursor)
-	ErrCursorIndexDirectionMismatch        = errors.New(errCursorIndexDirectionMismatch)
+	ErrNoSupportingIndexForCursor = errors.New(errNoSupportingIndexForCursor)
 )
 
 func NewErrUnknownDependency(name string) error {
