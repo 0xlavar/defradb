@@ -23,6 +23,7 @@ import (
 	"github.com/sourcenetwork/defradb/client/request"
 	"github.com/sourcenetwork/defradb/internal/core"
 	"github.com/sourcenetwork/defradb/internal/db/description"
+	"github.com/sourcenetwork/defradb/internal/db/fetcher"
 	"github.com/sourcenetwork/defradb/internal/db/id"
 	"github.com/sourcenetwork/defradb/internal/keys"
 	"github.com/sourcenetwork/defradb/internal/planner/filter"
@@ -408,8 +409,17 @@ func findIndexByOrderingField(scanNode *scanNode) immutable.Option[client.IndexD
 		}
 
 		indexes := col.GetIndexesOnField(fieldNames[0])
-		if len(indexes) > 0 {
-			return immutable.Some(indexes[0])
+		for _, idx := range indexes {
+			ordered, _ := fetcher.CanBeOrderedByIndex(scanNode.ordering, idx, scanNode.documentMapping)
+			if !ordered {
+				continue
+			}
+			if scanNode.slct != nil &&
+				scanNode.slct.IsCursor &&
+				isUnsupportedCursorCompositePrefix(scanNode.ordering, idx) {
+				continue
+			}
+			return immutable.Some(idx)
 		}
 	}
 	return immutable.None[client.IndexDescription]()
