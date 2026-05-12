@@ -26,23 +26,17 @@ var userCollectionGQLSchema = `
 	}
 `
 
-func executeTestCase(t *testing.T, test testUtils.TestCase) {
-	testUtils.ExecuteTestCase(
-		t,
-		testUtils.TestCase{
-			SupportedMutationTypes: test.SupportedMutationTypes,
-			SupportedClientTypes:   test.SupportedClientTypes,
-			Actions: append(
-				[]any{
-					&action.AddSchema{
-						Schema: userCollectionGQLSchema,
-					},
-				},
-				test.Actions...,
-			),
-		},
-	)
-}
+// func executeTestCase(t *testing.T, test testUtils.TestCase) {
+// 	test.Actions = append(
+// 		[]any{
+// 			&action.AddSchema{
+// 				Schema: userCollectionGQLSchema,
+// 			},
+// 		},
+// 		test.Actions...,
+// 	)
+// 	testUtils.ExecuteTestCase(t, test)
+// }
 
 // makeExplainQuery wraps a query with @explain(type: execute) for index verification.
 func makeExplainQuery(req string) string {
@@ -69,4 +63,12 @@ func extractUsers(usersRaw any) []map[string]any {
 	default:
 		return nil
 	}
+}
+
+func appendCursorUsers(docs *[]map[string]any) action.ResultAsserter {
+	return testUtils.ResultAsserterFunc(func(t testing.TB, result map[string]any) (bool, string) {
+		cursor := result["_cursor"].(map[string]any)
+		*docs = append(*docs, extractUsers(cursor["User"])...)
+		return true, ""
+	})
 }

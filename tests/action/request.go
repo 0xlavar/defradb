@@ -27,6 +27,12 @@ type ResultAsserter interface {
 	Assert(t testing.TB, result map[string]any)
 }
 
+// VariableResolver resolves a request variable value at execution time.
+type VariableResolver interface {
+	// ResolveVariable returns the value to use for the given node.
+	ResolveVariable(t testing.TB, nodeID int) any
+}
+
 // ResultAsserterFunc is a function that can be used to implement the ResultAsserter
 type ResultAsserterFunc func(testing.TB, map[string]any) (bool, string)
 
@@ -106,7 +112,7 @@ nodeLoop:
 			options = append(options, client.WithOperationName(a.OperationName.Value()))
 		}
 		if a.Variables.HasValue() {
-			resolvedVars := a.resolveVariables()
+			resolvedVars := a.resolveVariables(nodeID)
 			if resolvedVars != nil {
 				options = append(options, client.WithVariables(resolvedVars))
 			}
@@ -162,9 +168,9 @@ func (a *Request) getTransaction(db client.TxnStore) client.Txn {
 	return a.s.Txns[transactionID]
 }
 
-// resolveVariables creates a copy of the Variables map with CapturedVar references
-// resolved to their captured values from state.
-func (a *Request) resolveVariables() map[string]any {
+// resolveVariables creates a copy of the Variables map with variable resolvers
+// replaced by values for the node currently executing the request.
+func (a *Request) resolveVariables(nodeID int) map[string]any {
 	if !a.Variables.HasValue() {
 		return nil
 	}
@@ -174,12 +180,8 @@ func (a *Request) resolveVariables() map[string]any {
 
 	for k, v := range vars {
 		switch ref := v.(type) {
-		case state.CapturedVar:
-			captured, ok := a.s.GetCapturedVariable(string(ref))
-			if !ok {
-				a.s.T.Fatalf("captured variable %q not found - ensure a prior request captured this value using CaptureCursor", ref)
-			}
-			resolved[k] = captured
+		case VariableResolver:
+			resolved[k] = ref.ResolveVariable(a.s.T, nodeID)
 		default:
 			resolved[k] = v
 		}

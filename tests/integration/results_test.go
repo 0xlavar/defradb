@@ -14,17 +14,18 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	acpIdentity "github.com/sourcenetwork/defradb/acp/identity"
 	"github.com/sourcenetwork/defradb/client"
+	internalCursor "github.com/sourcenetwork/defradb/internal/cursor"
 	"github.com/sourcenetwork/defradb/tests/state"
 )
 
 // mockTestState is a simple mock implementation of TestState interface for testing
 type mockTestState struct {
-	clientType        state.ClientType
-	currentNodeID     int
-	capturedVariables map[string]any
+	clientType    state.ClientType
+	currentNodeID int
 }
 
 func (m *mockTestState) GetClientType() state.ClientType {
@@ -41,21 +42,6 @@ func (m *mockTestState) GetIdentity(_ state.Identity) acpIdentity.Identity {
 
 func (m *mockTestState) GetDocID(_ int, _ int) client.DocID {
 	return client.DocID{}
-}
-
-func (m *mockTestState) SetCapturedVariable(name string, value any) {
-	if m.capturedVariables == nil {
-		m.capturedVariables = make(map[string]any)
-	}
-	m.capturedVariables[name] = value
-}
-
-func (m *mockTestState) GetCapturedVariable(name string) (any, bool) {
-	if m.capturedVariables == nil {
-		return nil, false
-	}
-	v, ok := m.capturedVariables[name]
-	return v, ok
 }
 
 func TestAnyOfMatcher(t *testing.T) {
@@ -222,4 +208,26 @@ func TestSameValueMatcher_ResetState_ShouldReset(t *testing.T) {
 	got, err = matcher.Match(2)
 	assert.NoError(t, err)
 	assert.True(t, got)
+}
+
+func TestCapturedCursor_StoresValuesPerNode(t *testing.T) {
+	node0Cursor, err := internalCursor.Encode(internalCursor.CursorPayload{DocID: "node0"})
+	require.NoError(t, err)
+	node1Cursor, err := internalCursor.Encode(internalCursor.CursorPayload{DocID: "node1"})
+	require.NoError(t, err)
+
+	matcher := NewCapturedCursor()
+
+	matcher.SetCurrentNodeID(0)
+	got, err := matcher.Match(node0Cursor)
+	require.NoError(t, err)
+	require.True(t, got)
+
+	matcher.SetCurrentNodeID(1)
+	got, err = matcher.Match(node1Cursor)
+	require.NoError(t, err)
+	require.True(t, got)
+
+	assert.Equal(t, node0Cursor, matcher.ResolveVariable(t, 0))
+	assert.Equal(t, node1Cursor, matcher.ResolveVariable(t, 1))
 }
