@@ -26,18 +26,6 @@ var userCollectionGQLSchema = `
 	}
 `
 
-// func executeTestCase(t *testing.T, test testUtils.TestCase) {
-// 	test.Actions = append(
-// 		[]any{
-// 			&action.AddSchema{
-// 				Schema: userCollectionGQLSchema,
-// 			},
-// 		},
-// 		test.Actions...,
-// 	)
-// 	testUtils.ExecuteTestCase(t, test)
-// }
-
 // makeExplainQuery wraps a query with @explain(type: execute) for index verification.
 func makeExplainQuery(req string) string {
 	ind := strings.Index(req, "query")
