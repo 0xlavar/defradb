@@ -53,7 +53,7 @@ type Wrapper struct {
 //
 // sourceHubAddress can (and will) be empty when testing non sourceHub ACP implementations.
 func NewWrapper(node *node.Node, sourceHubAddress string) (*Wrapper, error) {
-	handler, err := http.NewHandler(node.DB)
+	handler, err := http.NewHandler(node.DB, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +117,22 @@ func (w *Wrapper) Connect(
 	args := []string{"client", "p2p", "connect"}
 
 	args = append(args, strings.Join(addresses, ","))
+
+	opt := utils.NewOptions(opts...)
+	args = appendIdentityArg(args, opt.GetIdentity())
+
+	_, err := w.cmd.execute(ctx, args)
+	return err
+}
+
+func (w *Wrapper) Disconnect(
+	ctx context.Context,
+	addresses []string,
+	opts ...options.Enumerable[options.DisconnectOptions],
+) error {
+	args := []string{"client", "p2p", "disconnect"}
+
+	args = append(args, addresses...)
 
 	opt := utils.NewOptions(opts...)
 	args = appendIdentityArg(args, opt.GetIdentity())
